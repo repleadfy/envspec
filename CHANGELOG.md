@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 — 2026-05-04
+
+- Refactor CLI into `EnvSpec::CLI` with proper subcommand structure (per-subcommand `OptionParser` with banners, options, and `-h` help). Still pure stdlib.
+- `envspec help <command>` and `envspec <command> -h` now show subcommand-specific usage.
+- Better exit codes (2 for usage errors, 1 for parse/validation errors, 0 for success).
+
 ## 0.1.0 — 2026-05-04
 
 Initial release.

@@ -1,0 +1,9 @@
+/.bundle/
+/Gemfile.lock
+/pkg/
+/tmp/
+*.gem
+
+# local-only workspace files (not for public repo)
+/NEXT.md
+/doc/

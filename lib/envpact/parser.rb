@@ -61,7 +61,7 @@ class EnvPact
     scope = [SHARED]
     type  = :configmap
 
-    text = text.sub(/\A﻿/, "")
+    text = text.sub(/\A\uFEFF/, "")
     text.each_line.with_index(1) do |raw, line_no|
       line = strip_comment(raw.chomp).strip
       next if line.empty?

@@ -40,10 +40,10 @@ class EnvPact
       end
 
       klass.new.run(argv)
-    rescue OptionParser::ParseError => e
+    rescue OptionParser::ParseError, UsageError => e
       warn "envpact: #{e.message}"
       2
-    rescue EnvPact::ParseError, EnvPact::ValidationError => e
+    rescue EnvPact::Error => e
       warn "envpact: #{e.message}"
       1
     end

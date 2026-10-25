@@ -3,15 +3,18 @@ require_relative "command"
 class EnvPact
   class CLI
     class Lint < Command
-      name "lint"
+      command_name "lint"
       summary "Parse and validate syntax of an env.spec file"
-      banner "Usage: envpact lint <file>"
+      banner "Usage: envpact lint [--spec=PATH]"
       description "Parses an env.spec file and reports any syntax errors."
 
-      def call(rest, _opts)
-        file = require_file(rest.shift)
-        EnvPact.parse_file(file)
-        puts "✓ #{file} is valid"
+      def configure(o, opts)
+        spec_option(o, opts)
+      end
+
+      def call(_rest, opts)
+        load_spec(opts)
+        puts "✓ #{spec_path(opts)} is valid"
         0
       end
     end

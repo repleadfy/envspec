@@ -3,7 +3,7 @@ require_relative "command"
 class EnvPact
   class CLI
     class Check < Command
-      name "check"
+      command_name "check"
       summary "Check current ENV against an env.spec"
       banner "Usage: envpact check <file> [options]"
       description <<~DESC
@@ -21,8 +21,9 @@ class EnvPact
       end
 
       def call(rest, opts)
-        file = require_file(rest.shift)
-        spec = EnvPact.parse_file(file)
+        opts[:spec] ||= rest.shift
+        file = spec_path(opts)
+        spec = load_spec(opts)
         spec.check!(ENV.to_h, env: opts[:env], strict: opts[:strict], extras: false)
         label = opts[:env] == "*" ? "shared" : opts[:env]
         puts "✓ ENV satisfies #{file} (env: #{label})"

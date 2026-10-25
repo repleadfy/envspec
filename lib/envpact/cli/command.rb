@@ -106,6 +106,33 @@ class EnvPact
         raise EnvPact::Error, "spec not found: #{path}" unless File.file?(path)
         EnvPact.parse_file(path)
       end
+
+      # Prints the result and returns the exit code. reveal: is the values
+      # hash when the user asked for --show-values; extras never show values.
+      def report(spec, result, opts, reveal: nil)
+        name  = File.basename(spec_path(opts))
+        scope = "(#{scope_label(spec, result)})"
+        if result.ok?
+          puts "✓ #{name} satisfied #{scope}"
+        else
+          warn "✗ #{name} not satisfied #{scope}"
+          result.errors.each { |p| warn "  - #{problem_text(p, reveal)}" }
+        end
+        result.warnings.each { |p| warn "  ! #{problem_text(p, reveal)}" }
+        result.ok? ? 0 : 1
+      end
+
+      def scope_label(spec, result)
+        env = result.env
+        return "env: #{env} — shared + [env: #{env}]" if result.applied_sections.include?(env)
+        others = spec.envs
+        others.empty? ? "env: #{env} — shared only" : "env: #{env} — shared only; sections in spec: #{others.join(', ')}"
+      end
+
+      def problem_text(problem, reveal)
+        return problem.message if reveal.nil? || problem.kind == :extra
+        Message.format(problem, value: reveal[problem.key])
+      end
     end
   end
 end

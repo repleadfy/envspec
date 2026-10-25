@@ -75,6 +75,91 @@ class TestCLI < Minitest::Test
     end
   end
 
+  # ── check ─────────────────────────────────────────────────────────
+
+  def test_check_requires_env
+    in_tmpdir("env.spec" => "A\n") do
+      assert_equal 2, run_cli("check").first
+    end
+  end
+
+  def test_check_reads_dotenv_files_for_env
+    in_tmpdir("env.spec" => "A\nB\n", ".env" => "A=1\n", ".env.test" => "B=2\n") do
+      code, out, = run_cli("check", "--env=test")
+      assert_equal 0, code
+      assert_match(/^Read: \.env, \.env\.test$/, out)
+      assert_includes out, "✓ env.spec satisfied (env: test — shared only)"
+    end
+  end
+
+  def test_check_reports_no_files_found
+    in_tmpdir("env.spec" => "A?\n") do
+      _, out, = run_cli("check", "--env=dev")
+      assert_includes out, "Read: (no .env files found)"
+    end
+  end
+
+  def test_check_reports_applied_section
+    in_tmpdir("env.spec" => "A\n[env: production]\nB\n", ".env" => "A=1\nB=2\n") do
+      _, out, = run_cli("check", "--env=production")
+      assert_includes out, "✓ env.spec satisfied (env: production — shared + [env: production])"
+    end
+  end
+
+  def test_check_lists_sections_when_env_has_none
+    in_tmpdir("env.spec" => "A\n[env: production]\nB\n[env: staging]\nC\n", ".env" => "A=1\n") do
+      _, out, = run_cli("check", "--env=prod")
+      assert_includes out, "✓ env.spec satisfied (env: prod — shared only; sections in spec: production, staging)"
+    end
+  end
+
+  def test_check_failure_lists_problems
+    in_tmpdir("env.spec" => "A\nB\n", ".env" => "A=1\n") do
+      code, _, err = run_cli("check", "--env=dev")
+      assert_equal 1, code
+      assert_includes err, "✗ env.spec not satisfied (env: dev — shared only)"
+      assert_includes err, "  - missing required env var 'B' (declared at line 2)"
+    end
+  end
+
+  def test_check_masks_secrets_unless_show_values
+    in_tmpdir("env.spec" => "[secrets]\nP: int\n", ".env" => "P=hunter2\n") do
+      _, _, err = run_cli("check", "--env=dev")
+      refute_match(/hunter2/, err)
+      _, _, err = run_cli("check", "--env=dev", "--show-values")
+      assert_match(/hunter2/, err)
+    end
+  end
+
+  def test_check_extras_warn_and_strict_fails
+    in_tmpdir("env.spec" => "A\n", ".env" => "A=1\nZ=secretish\n") do
+      code, _, err = run_cli("check", "--env=dev")
+      assert_equal 0, code
+      assert_includes err, "  ! unknown env var 'Z' (not declared in spec)"
+      _, _, err = run_cli("check", "--env=dev", "--show-values")
+      refute_match(/secretish/, err)
+      assert_equal 1, run_cli("check", "--env=dev", "--strict").first
+    end
+  end
+
+  def test_check_from_env_ignores_extras
+    in_tmpdir("env.spec" => "ENVPACT_T_A\n") do
+      with_env("ENVPACT_T_A" => "1") do
+        code, _, err = run_cli("check", "--env=x", "--from-env", "--strict")
+        assert_equal 0, code
+        refute_match(/unknown env var/, err)
+      end
+    end
+  end
+
+  def test_check_missing_spec_exits_1
+    in_tmpdir do
+      code, _, err = run_cli("check", "--env=x")
+      assert_equal 1, code
+      assert_equal "envpact: spec not found: env.spec\n", err
+    end
+  end
+
   def test_missing_spec_exits_1_without_backtrace
     code, _, err = run_cli("lint", "--spec=/nonexistent/env.spec")
     assert_equal 1, code

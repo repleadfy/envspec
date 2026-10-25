@@ -57,8 +57,8 @@ class TestValidator < Minitest::Test
     assert_match(/not in enum/, err.message)
   end
 
-  def test_dsn_treated_as_string
-    s = spec("[secrets]\nDATABASE_URL: dsn")
+  def test_url_accepted
+    s = spec("[secrets]\nDATABASE_URL: url")
     assert s.validate!({ "DATABASE_URL" => "postgres://user:pass@host/db" })
   end
 

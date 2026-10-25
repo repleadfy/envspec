@@ -3,7 +3,7 @@ class EnvPact
   #
   # Checks:
   #   - required keys are present
-  #   - typed values parse cleanly (int, bool, dsn, enum)
+  #   - typed values parse cleanly (int, bool, url, enum)
   #   - reports unknown keys as warnings (extras), not errors
   #
   # Usage:
@@ -48,7 +48,7 @@ class EnvPact
 
   def type_problem(name, raw, entry)
     case entry.type
-    when :str, :dsn
+    when :str, :url
       nil
     when :int
       Integer(raw, 10)

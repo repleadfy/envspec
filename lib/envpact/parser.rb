@@ -4,19 +4,20 @@
 # Syntax (v5):
 #   KEY                       # str, required, configmap, shared (all envs)
 #   KEY?                      # optional
-#   KEY: int                  # typed (str|int|bool|dsn|enum(a,b))
+#   KEY: int                  # typed (str|int|bool|url|enum(a,b))
 #   KEY: str = default        # with default (configmap only)
 #
 #   [secrets]                 # MODIFIER: type flips to secret (scope unchanged)
 #   [env: production]         # SELECTOR: scope -> production, type RESETS to configmap
 #   [env: production, staging]# multi-env scope
+#   [shared]                  # SELECTOR: scope -> back to shared, type RESETS to configmap
 #
 # Output:
 #   configmap = { "*" => { "KEY" => Entry }, "production" => {...} }
 #   secrets   = { "*" => { "DB_PASS" => Entry }, "production" => {...} }
 class EnvPact
   SHARED = "*".freeze
-  VALID_TYPES = %i[str int bool dsn enum].freeze
+  VALID_TYPES = %i[str int bool url enum].freeze
   ENV_NAME_RE = /\A[A-Za-z0-9_-]+\z/.freeze
 
   attr_reader :configmap, :secrets
@@ -70,6 +71,9 @@ class EnvPact
         inner = line[1..-2].strip
         if inner == "secrets"
           type = :secret
+        elsif inner == "shared"
+          scope = [SHARED]
+          type  = :configmap
         elsif inner.start_with?("env:")
           envs = inner.sub(/\Aenv:/, "").split(",").map(&:strip).reject(&:empty?)
           raise ParseError.new("empty [env: ...] selector", line_no) if envs.empty?
@@ -84,7 +88,7 @@ class EnvPact
           scope = envs
           type  = :configmap
         else
-          raise ParseError.new("unknown header [#{inner}] (only [secrets] and [env: ...] allowed)", line_no)
+          raise ParseError.new("unknown header [#{inner}] (only [secrets], [shared] and [env: ...] allowed)", line_no)
         end
         next
       end
@@ -156,9 +160,18 @@ class EnvPact
 
   def store_entry(type, scope, e, line_no)
     bucket = (type == :secret ? @secrets : @configmap)
+    other  = (type == :secret ? @configmap : @secrets)
 
     scope.each do |env|
       bucket[env] ||= {}
+
+      if (clash = find_overlapping(other, env, e[:name]))
+        cm_line, secret_line = type == :secret ? [clash[:entry].line, line_no] : [line_no, clash[:entry].line]
+        raise ParseError.new(
+          "key '#{e[:name]}' declared as both configmap (line #{cm_line}) and secret (line #{secret_line})",
+          line_no
+        )
+      end
 
       if (existing = find_overlapping(bucket, env, e[:name]))
         raise ParseError.new(

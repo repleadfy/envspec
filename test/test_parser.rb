@@ -240,6 +240,32 @@ class TestParser < Minitest::Test
     assert spec.secrets["staging"]["STRIPE_TEST_KEY"]
   end
 
+  # ── url, [shared], configmap/secret conflict ────────────────────
+
+  def test_url_type
+    assert_equal :url, parse("DATABASE_URL: url").configmap["*"]["DATABASE_URL"].type
+  end
+
+  def test_dsn_type_removed
+    assert_raises_parse(/unknown type 'dsn'/) { parse("X: dsn") }
+  end
+
+  def test_shared_header_returns_to_shared_scope
+    spec = parse("[env: production]\nA\n[secrets]\nS\n[shared]\nB")
+    assert spec.configmap["*"].key?("B")
+    refute (spec.secrets["*"] || {}).key?("B")
+  end
+
+  def test_key_both_configmap_and_secret_raises
+    assert_raises_parse(/'A' declared as both configmap \(line 1\) and secret \(line 3\)/) { parse("A\n[secrets]\nA") }
+  end
+
+  def test_configmap_and_secret_in_disjoint_envs_ok
+    spec = parse("[env: production]\nA\n[env: staging]\n[secrets]\nA")
+    assert spec.configmap["production"].key?("A")
+    assert spec.secrets["staging"].key?("A")
+  end
+
   # ── comments, quoting, line endings ─────────────────────────────
 
   def test_hash_inside_value_is_kept

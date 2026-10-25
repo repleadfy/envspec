@@ -1,8 +1,5 @@
-require "uri"
-
 class EnvPact
   KEY_RE = /\A[A-Z][A-Z0-9_]*\z/.freeze
-  BOOL_VALUES = %w[true false 1 0 yes no].freeze
 
   # Checks a values hash against the spec for one env.
   #
@@ -22,7 +19,7 @@ class EnvPact
         if raw.nil? || raw.empty?
           next if entry.optional || !entry.default.nil?
           errors << Problem.new(kind: :missing, key: key, secret: secret, line: entry.line)
-        elsif !valid_value?(raw, entry)
+        elsif !Types.valid?(raw, entry.type, entry.enum_values)
           errors << Problem.new(kind: :invalid, key: key, secret: secret, line: entry.line,
                                 value: (secret ? nil : raw), type: entry.type, enum_values: entry.enum_values)
         end
@@ -52,24 +49,5 @@ class EnvPact
     sections = ["shared"]
     sections << env if @configmap.key?(env) || @secrets.key?(env)
     sections
-  end
-
-  def valid_value?(raw, entry)
-    case entry.type
-    when :str  then true
-    when :int  then !Integer(raw, 10).nil?
-    when :bool then BOOL_VALUES.include?(raw.downcase)
-    when :enum then entry.enum_values.include?(raw)
-    when :url  then valid_url?(raw)
-    end
-  rescue ArgumentError
-    false
-  end
-
-  def valid_url?(raw)
-    uri = URI.parse(raw)
-    !uri.scheme.nil? && !uri.host.nil? && !uri.host.empty?
-  rescue URI::InvalidURIError
-    false
   end
 end

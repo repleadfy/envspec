@@ -285,6 +285,24 @@ class TestParser < Minitest::Test
     assert_equal 'a"b\\c', parse('K = "a\\"b\\\\c"').configmap["*"]["K"].default
   end
 
+  def test_unknown_escape_in_quoted_default_kept_verbatim
+    # spec text: K = "a\nb"  →  default: a\nb (backslash kept; only \" and \\ are escapes)
+    assert_equal 'a\\nb', parse('K = "a\\nb"').configmap["*"]["K"].default
+  end
+
+  def test_default_must_match_type
+    assert_raises_parse(/default "3OOO" for 'PORT' is not a valid int/) { parse("PORT: int = 3OOO") }
+    assert_raises_parse(/default "verbose" for 'LOG' is not in enum\(debug, info\)/) { parse("LOG: enum(debug, info) = verbose") }
+    assert_raises_parse(/default "localhost:3000" for 'U' is not a valid url/) { parse("U: url = localhost:3000") }
+  end
+
+  def test_parse_errors_do_not_echo_line_content
+    err = assert_raises(EnvPact::ParseError) { parse("export DB_PASS=hunter2") }
+    refute_match(/hunter2/, err.message)
+    err = assert_raises(EnvPact::ParseError) { parse(%([secrets]\nDB_PASS = "hunter2)) }
+    refute_match(/hunter2/, err.message)
+  end
+
   def test_unterminated_quote_raises
     assert_raises_parse(/unterminated quoted default/) { parse(%(K = "abc)) }
   end

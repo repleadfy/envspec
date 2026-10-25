@@ -27,7 +27,7 @@ class EnvPact
   end
 
   def self.parse_file(path)
-    parse(File.read(path))
+    parse(EnvPact.read_text(path))
   end
 
   def initialize
@@ -62,7 +62,7 @@ class EnvPact
     scope = [SHARED]
     type  = :configmap
 
-    text = text.sub(/\A\uFEFF/, "")
+    text = EnvPact.utf8(text).sub(/\A\uFEFF/, "")
     text.each_line.with_index(1) do |raw, line_no|
       line = strip_comment(raw.chomp).strip
       next if line.empty?
@@ -97,6 +97,9 @@ class EnvPact
       if type == :secret && !entry[:default].nil?
         raise ParseError.new("secret '#{entry[:name]}' cannot have a default value", line_no)
       end
+      # After the secret check, so a value mistakenly given to a secret is
+      # never echoed. Configmap defaults are not secret.
+      check_default_type(entry, line_no)
 
       store_entry(type, scope, entry, line_no)
     end
@@ -104,12 +107,13 @@ class EnvPact
 
   def parse_key_line(line, line_no)
     m = line.match(/\A([A-Z][A-Z0-9_]*)(\?)?(?:\s*:\s*([a-z]+(?:\([^)]*\))?))?(?:\s*=\s*(.+))?\z/)
-    raise ParseError.new("invalid key line: #{line.inspect}", line_no) unless m
+    # The line itself is not echoed: it may hold a value pasted by mistake.
+    raise ParseError.new("invalid key line (expected KEY, KEY?, KEY: type, KEY = default)", line_no) unless m
 
     name      = m[1]
     optional  = !m[2].nil?
     type_str  = m[3] || "str"
-    default   = m[4] && parse_default(m[4].strip, line_no)
+    default   = m[4] && parse_default(name, m[4].strip, line_no)
 
     type, enum_values = parse_type(type_str, line_no)
     { name: name, type: type, optional: optional, default: default, enum_values: enum_values }
@@ -134,11 +138,19 @@ class EnvPact
     line
   end
 
-  def parse_default(raw, line_no)
+  # Only \" and \\ are escapes; any other backslash is kept as is.
+  def parse_default(name, raw, line_no)
     return raw unless raw.start_with?("\"")
     m = raw.match(/\A"((?:[^"\\]|\\.)*)"\z/)
-    raise ParseError.new("unterminated quoted default: #{raw}", line_no) unless m
-    m[1].gsub(/\\(.)/) { Regexp.last_match(1) }
+    raise ParseError.new("unterminated quoted default for '#{name}'", line_no) unless m
+    m[1].gsub(/\\([\\"])/) { Regexp.last_match(1) }
+  end
+
+  def check_default_type(entry, line_no)
+    default = entry[:default]
+    return if default.nil? || Types.valid?(default, entry[:type], entry[:enum_values])
+    reason = Message.invalid_reason(entry[:type], entry[:enum_values])
+    raise ParseError.new("default #{default.inspect} for '#{entry[:name]}' #{reason}", line_no)
   end
 
   def parse_type(type_str, line_no)

@@ -39,6 +39,10 @@ class TestDotenv < Minitest::Test
     assert_equal({ "A" => "" }, parse("A=\n"))
   end
 
+  def test_parse_empty_value_with_comment
+    assert_equal({ "SENTRY_DSN" => "" }, parse("SENTRY_DSN= # optional in dev\n"))
+  end
+
   def test_lines_without_equals_ignored
     assert_equal({}, parse("garbage\n"))
   end

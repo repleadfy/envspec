@@ -25,15 +25,15 @@ class EnvPact
         "unknown env var '#{key}' (not declared in spec)"
       when :invalid
         subject = value.nil? ? "env var '#{key}' (secret)" : "env var '#{key}' = #{value.inspect}"
-        "#{subject} #{invalid_reason(problem)}"
+        "#{subject} #{invalid_reason(problem.type, problem.enum_values)}"
       end
     end
 
-    def self.invalid_reason(problem)
-      case problem.type
+    def self.invalid_reason(type, enum_values)
+      case type
       when :bool then "is not a valid bool #{BOOL_HINT}"
-      when :enum then "is not in enum(#{problem.enum_values.join(', ')})"
-      else "is not a valid #{problem.type}"
+      when :enum then "is not in enum(#{enum_values.join(', ')})"
+      else "is not a valid #{type}"
       end
     end
   end

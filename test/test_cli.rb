@@ -160,6 +160,16 @@ class TestCLI < Minitest::Test
     end
   end
 
+  def test_unreadable_spec_exits_1_without_backtrace
+    skip "root can read anything" if Process.uid.zero?
+    in_tmpdir("env.spec" => "A\n") do
+      File.chmod(0o000, "env.spec")
+      code, _, err = run_cli("lint")
+      assert_equal 1, code
+      assert_match(/\Aenvpact: Permission denied/, err)
+    end
+  end
+
   def test_missing_spec_exits_1_without_backtrace
     code, _, err = run_cli("lint", "--spec=/nonexistent/env.spec")
     assert_equal 1, code

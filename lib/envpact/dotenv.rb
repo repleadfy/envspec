@@ -23,13 +23,13 @@ class EnvPact
         path = File.join(dir, name)
         next unless File.file?(path)
         files << name
-        values.merge!(parse(File.read(path)))
+        values.merge!(parse(EnvPact.read_text(path)))
       end
       { files: files, values: values }
     end
 
     def self.parse(text)
-      text.each_line.each_with_object({}) do |raw, out|
+      EnvPact.utf8(text).sub(/\A﻿/, "").each_line.each_with_object({}) do |raw, out|
         m = LINE_RE.match(raw.chomp.chomp("\r"))
         next unless m
         out[m[1]] = parse_value(m[2].strip)
@@ -37,6 +37,7 @@ class EnvPact
     end
 
     def self.parse_value(raw)
+      return "" if raw.start_with?("#") # `KEY= # comment` is an empty value
       if raw.start_with?("'") && (close = raw.index("'", 1))
         raw[1...close]
       elsif raw.start_with?('"') && (m = raw.match(/\A"((?:[^"\\]|\\.)*)"/))

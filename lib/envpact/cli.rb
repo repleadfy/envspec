@@ -47,7 +47,7 @@ class EnvPact
     rescue OptionParser::ParseError, UsageError => e
       warn "envpact: #{e.message}"
       2
-    rescue EnvPact::Error => e
+    rescue EnvPact::Error, SystemCallError => e
       warn "envpact: #{e.message}"
       1
     end

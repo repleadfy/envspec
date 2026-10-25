@@ -57,7 +57,34 @@ class TestExec < Minitest::Test
   def test_exec_command_not_found
     code, _, err = envpact("A\n", { "A" => "1" }, "--env=x", "--", "definitely-not-a-command-xyz")
     assert_equal 127, code
-    assert_equal "envpact: command not found: definitely-not-a-command-xyz\n", err
+    assert_equal "envpact: command not found: definitely-not-a-command-xyz\n", err.lines.last
+    refute_match(/\.rb:\d+:in/, err)
+  end
+
+  def test_exec_command_not_executable
+    Dir.mktmpdir do |d|
+      script = File.join(d, "noexec.sh")
+      File.write(script, "#!/bin/sh\necho hi\n")
+      File.chmod(0o644, script)
+      code, _, err = envpact("A\n", { "A" => "1" }, "--env=x", "--", script)
+      assert_equal 126, code
+      assert_match(/\Aenvpact: cannot execute: #{Regexp.escape(script)} \(/, err.lines.last)
+      refute_match(/\.rb:\d+:in/, err)
+    end
+  end
+
+  def test_exec_reports_applied_sections_on_success
+    _, _, err = envpact("A\n[env: production]\nB?\n", { "A" => "1" }, "--env=prod", "--", "true")
+    assert_includes err, "✓ env.spec satisfied (env: prod — shared only; sections in spec: production)"
+  end
+
+  def test_exec_missing_spec_exits_1
+    Dir.mktmpdir do |d|
+      cmd = ["ruby", "-I#{ROOT}/lib", "#{ROOT}/exe/envpact", "exec", "--spec=#{d}/nope.spec", "--env=x", "--", "true"]
+      _, err, status = Open3.capture3({ "ENVPACT_SPEC" => nil }, *cmd)
+      assert_equal 1, status.exitstatus
+      assert_equal "envpact: spec not found: #{d}/nope.spec\n", err
+    end
   end
 
   def test_exec_without_command_is_usage_error

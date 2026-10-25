@@ -36,10 +36,15 @@ class EnvPact
         result = spec.check(ENV.to_h, env: env, extras: false)
         return report(spec, result, opts) unless result.ok?
 
+        # stderr, so the app's stdout stays its own; shows which sections
+        # applied, which is how an ENVPACT_ENV typo becomes visible at boot.
+        warn "✓ #{File.basename(spec_path(opts))} satisfied (#{scope_label(spec, result)})"
         fill_defaults(spec, env)
         Kernel.exec(*@command)
       rescue Errno::ENOENT
         die("command not found: #{@command.first}", 127)
+      rescue Errno::EACCES, Errno::ENOEXEC => e
+        die("cannot execute: #{@command.first} (#{e.message})", 126)
       end
 
       private

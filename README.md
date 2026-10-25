@@ -85,8 +85,9 @@ FEATURE_FLAGS?
   - `bool` accepts `true false 1 0 yes no` (any case).
   - `url` needs a scheme and a host: `postgres://u:p@h:5432/db`, `https://x.y`.
 - `KEY = default` — default value, ConfigMap only; secrets cannot have defaults.
+  The default must be valid for the type (`PORT: int = 3OOO` is a lint error).
   Quote it to keep `#` or surrounding spaces: `GREETING = "hi # there "`
-  (escapes: `\"` and `\\`).
+  (only `\"` and `\\` are escapes; any other backslash is kept).
 - `[secrets]` — modifier: following keys are Secrets; scope unchanged.
 - `[env: name]` / `[env: a, b]` — selector: following keys apply only to those
   envs; type resets to ConfigMap. Env names are free-form (`[A-Za-z0-9_-]+`).

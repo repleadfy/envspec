@@ -19,7 +19,8 @@ boot). Breaking changes throughout; envspec had no real users.
 - **Syntax:** `url` type (validated) replaces `dsn`; new `[shared]` header;
   `#` starts a comment only at line start or after whitespace; quoted defaults
   (`"..."`, escapes `\"` `\\`); CRLF and UTF-8 BOM accepted; a key declared
-  as both ConfigMap and Secret is a parse error.
+  as both ConfigMap and Secret, or a default that doesn't match its type, is a
+  parse error. Files are read as UTF-8 regardless of locale.
 - **CLI:** `check` reads `.env`, `.env.<env>`, `.env.local` (not for test),
   `.env.<env>.local`, or `--from-env`; new `exec` boot wrapper (fills defaults,
   then execs; env from `--env` or `$ENVPACT_ENV`); new `scan-prompt` for AI

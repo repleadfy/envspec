@@ -23,7 +23,7 @@ class EnvPact
       def call(rest, opts)
         file = require_file(rest.shift)
         spec = EnvPact.parse_file(file)
-        spec.validate!(ENV.to_h, env: opts[:env], strict: opts[:strict])
+        spec.check!(ENV.to_h, env: opts[:env], strict: opts[:strict], extras: false)
         label = opts[:env] == "*" ? "shared" : opts[:env]
         puts "✓ ENV satisfies #{file} (env: #{label})"
         0

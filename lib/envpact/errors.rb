@@ -10,10 +10,10 @@ class EnvPact
   end
 
   class ValidationError < Error
-    attr_reader :problems
-    def initialize(problems)
-      @problems = Array(problems)
-      lines = ["env validation failed:"] + @problems.map { |p| "  - #{p}" }
+    attr_reader :result
+    def initialize(result)
+      @result = result
+      lines = ["env validation failed (env: #{result.env}):"] + result.errors.map { |p| "  - #{p.message}" }
       super(lines.join("\n"))
     end
   end

@@ -61,8 +61,9 @@ class EnvPact
     scope = [SHARED]
     type  = :configmap
 
+    text = text.sub(/\A﻿/, "")
     text.each_line.with_index(1) do |raw, line_no|
-      line = raw.sub(/#.*/, "").strip
+      line = strip_comment(raw.chomp).strip
       next if line.empty?
 
       if line.start_with?("[") && line.end_with?("]")
@@ -104,10 +105,36 @@ class EnvPact
     name      = m[1]
     optional  = !m[2].nil?
     type_str  = m[3] || "str"
-    default   = m[4] && m[4].strip
+    default   = m[4] && parse_default(m[4].strip, line_no)
 
     type, enum_values = parse_type(type_str, line_no)
     { name: name, type: type, optional: optional, default: default, enum_values: enum_values }
+  end
+
+  # A "#" starts a comment at line start or after whitespace, never inside a
+  # double-quoted default.
+  def strip_comment(line)
+    in_quotes = false
+    escaped   = false
+    line.each_char.with_index do |ch, i|
+      if escaped
+        escaped = false
+      elsif ch == "\\" && in_quotes
+        escaped = true
+      elsif ch == "\""
+        in_quotes = !in_quotes
+      elsif ch == "#" && !in_quotes && (i.zero? || line[i - 1] =~ /\s/)
+        return line[0...i]
+      end
+    end
+    line
+  end
+
+  def parse_default(raw, line_no)
+    return raw unless raw.start_with?("\"")
+    m = raw.match(/\A"((?:[^"\\]|\\.)*)"\z/)
+    raise ParseError.new("unterminated quoted default: #{raw}", line_no) unless m
+    m[1].gsub(/\\(.)/) { Regexp.last_match(1) }
   end
 
   def parse_type(type_str, line_no)

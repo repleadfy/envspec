@@ -239,4 +239,37 @@ class TestParser < Minitest::Test
     assert spec.configmap["staging"]["DB_HOST"]
     assert spec.secrets["staging"]["STRIPE_TEST_KEY"]
   end
+
+  # ── comments, quoting, line endings ─────────────────────────────
+
+  def test_hash_inside_value_is_kept
+    assert_equal "http://x/a#frag", parse("URL = http://x/a#frag").configmap["*"]["URL"].default
+  end
+
+  def test_hash_after_space_is_comment
+    assert_equal "info", parse("LOG = info # level").configmap["*"]["LOG"].default
+  end
+
+  def test_quoted_default_keeps_hash_and_spaces
+    assert_equal "olá # mundo ", parse(%(GREETING = "olá # mundo ")).configmap["*"]["GREETING"].default
+  end
+
+  def test_quoted_default_escapes
+    # spec text: K = "a\"b\\c"  →  default: a"b\c
+    assert_equal 'a"b\\c', parse('K = "a\\"b\\\\c"').configmap["*"]["K"].default
+  end
+
+  def test_unterminated_quote_raises
+    assert_raises_parse(/unterminated quoted default/) { parse(%(K = "abc)) }
+  end
+
+  def test_crlf_lines
+    spec = parse("A\r\nB: int = 3\r\n")
+    assert_equal %w[A B], spec.configmap["*"].keys
+    assert_equal "3", spec.configmap["*"]["B"].default
+  end
+
+  def test_utf8_bom
+    assert parse("\uFEFFA\n").configmap["*"].key?("A")
+  end
 end

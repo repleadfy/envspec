@@ -1,6 +1,7 @@
 require_relative "cli/command"
 require_relative "cli/lint"
 require_relative "cli/check"
+require_relative "cli/exec"
 
 class EnvPact
   # Dispatcher for `envpact` subcommands.
@@ -12,6 +13,7 @@ class EnvPact
     COMMANDS = {
       "lint"  => Lint,
       "check" => Check,
+      "exec"  => Exec,
     }.freeze
 
     def self.run(argv)

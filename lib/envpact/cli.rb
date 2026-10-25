@@ -2,6 +2,7 @@ require_relative "cli/command"
 require_relative "cli/lint"
 require_relative "cli/check"
 require_relative "cli/exec"
+require_relative "cli/scan_prompt"
 
 class EnvPact
   # Dispatcher for `envpact` subcommands.
@@ -14,6 +15,7 @@ class EnvPact
       "lint"  => Lint,
       "check" => Check,
       "exec"  => Exec,
+      "scan-prompt" => ScanPromptCommand,
     }.freeze
 
     def self.run(argv)

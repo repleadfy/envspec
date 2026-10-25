@@ -1,6 +1,6 @@
 require "optparse"
 
-class EnvSpec
+class EnvPact
   class CLI
     # Base class for a single CLI subcommand.
     #
@@ -46,7 +46,7 @@ class EnvSpec
 
       def build_parser
         OptionParser.new do |o|
-          o.banner = self.class.banner || "Usage: envspec #{self.class.name}"
+          o.banner = self.class.banner || "Usage: envpact #{self.class.name}"
           if self.class.description
             o.separator ""
             self.class.description.each_line { |ln| o.separator ln.chomp }
@@ -79,7 +79,7 @@ class EnvSpec
       protected
 
       def die(msg, code = 1)
-        warn "envspec: #{msg}"
+        warn "envpact: #{msg}"
         code
       end
 
@@ -89,7 +89,7 @@ class EnvSpec
           warn parser.help
           exit 2
         end
-        warn "envspec: file not found: #{file}"
+        warn "envpact: file not found: #{file}"
         exit 1
       end
     end

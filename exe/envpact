@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+require "envpact"
+exit EnvPact::CLI.run(ARGV)

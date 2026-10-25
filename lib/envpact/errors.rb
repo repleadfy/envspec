@@ -1,4 +1,4 @@
-class EnvSpec
+class EnvPact
   class Error < StandardError; end
 
   class ParseError < Error

@@ -1,2 +1,2 @@
 require "minitest/autorun"
-require "envspec"
+require "envpact"

@@ -1,11 +1,11 @@
 require_relative "command"
 
-class EnvSpec
+class EnvPact
   class CLI
     class Check < Command
       name "check"
       summary "Check current ENV against an env.spec"
-      banner "Usage: envspec check <file> [options]"
+      banner "Usage: envpact check <file> [options]"
       description <<~DESC
         Validates the current process ENV against an env.spec file.
         Checks presence of required keys and that values match declared types.
@@ -22,7 +22,7 @@ class EnvSpec
 
       def call(rest, opts)
         file = require_file(rest.shift)
-        spec = EnvSpec.parse_file(file)
+        spec = EnvPact.parse_file(file)
         spec.validate!(ENV.to_h, env: opts[:env], strict: opts[:strict])
         label = opts[:env] == "*" ? "shared" : opts[:env]
         puts "✓ ENV satisfies #{file} (env: #{label})"

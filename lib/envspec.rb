@@ -1,7 +1,0 @@
-require_relative "envspec/version"
-require_relative "envspec/errors"
-require_relative "envspec/entry"
-require_relative "envspec/parser"
-require_relative "envspec/validator"
-require_relative "envspec/init"
-require_relative "envspec/cli"

@@ -1,19 +1,17 @@
 require_relative "cli/command"
 require_relative "cli/lint"
 require_relative "cli/check"
-require_relative "cli/init"
 
-class EnvSpec
-  # Dispatcher for `envspec` subcommands.
+class EnvPact
+  # Dispatcher for `envpact` subcommands.
   #
-  # Each subcommand is a class under EnvSpec::CLI inheriting from
-  # EnvSpec::CLI::Command. Register new commands by adding them to COMMANDS
-  # below and creating a file under lib/envspec/cli/.
+  # Each subcommand is a class under EnvPact::CLI inheriting from
+  # EnvPact::CLI::Command. Register new commands by adding them to COMMANDS
+  # below and creating a file under lib/envpact/cli/.
   class CLI
     COMMANDS = {
       "lint"  => Lint,
       "check" => Check,
-      "init"  => Init,
     }.freeze
 
     def self.run(argv)
@@ -29,13 +27,13 @@ class EnvSpec
         print_help(argv.first)
         return 0
       when "version", "-v", "--version"
-        puts EnvSpec::VERSION
+        puts EnvPact::VERSION
         return 0
       end
 
       klass = COMMANDS[cmd]
       unless klass
-        warn "envspec: unknown command '#{cmd}'"
+        warn "envpact: unknown command '#{cmd}'"
         warn ""
         print_help
         return 2
@@ -43,10 +41,10 @@ class EnvSpec
 
       klass.new.run(argv)
     rescue OptionParser::ParseError => e
-      warn "envspec: #{e.message}"
+      warn "envpact: #{e.message}"
       2
-    rescue EnvSpec::ParseError, EnvSpec::ValidationError => e
-      warn "envspec: #{e.message}"
+    rescue EnvPact::ParseError, EnvPact::ValidationError => e
+      warn "envpact: #{e.message}"
       1
     end
 
@@ -67,13 +65,13 @@ class EnvSpec
       width = rows.map { |r| r[0].length }.max
 
       lines = []
-      lines << "Usage: envspec <command> [options]"
+      lines << "Usage: envpact <command> [options]"
       lines << ""
       lines << "Commands:"
       rows.each { |name, summary| lines << format("  %-#{width}s   %s", name, summary) }
       lines << ""
-      lines << "Run `envspec help <command>` (or `envspec <command> -h`) for command-specific options."
-      lines << "Docs: https://github.com/repleadfy/envspec"
+      lines << "Run `envpact help <command>` (or `envpact <command> -h`) for command-specific options."
+      lines << "Docs: https://github.com/repleadfy/envpact"
       lines.join("\n")
     end
   end

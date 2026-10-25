@@ -1,3 +1,0 @@
-#!/usr/bin/env ruby
-require "envspec"
-exit EnvSpec::CLI.run(ARGV)

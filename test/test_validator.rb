@@ -2,7 +2,7 @@ require_relative "test_helper"
 
 class TestValidator < Minitest::Test
   def spec(text)
-    EnvSpec.parse(text)
+    EnvPact.parse(text)
   end
 
   # ── presence ──────────────────────────────────────────────────────
@@ -14,7 +14,7 @@ class TestValidator < Minitest::Test
 
   def test_missing_required_fails
     s = spec("APP_NAME")
-    err = assert_raises(EnvSpec::ValidationError) { s.validate!({}) }
+    err = assert_raises(EnvPact::ValidationError) { s.validate!({}) }
     assert_match(/missing required env var 'APP_NAME'/, err.message)
   end
 
@@ -30,7 +30,7 @@ class TestValidator < Minitest::Test
 
   def test_empty_string_treated_as_missing
     s = spec("APP_NAME")
-    assert_raises(EnvSpec::ValidationError) { s.validate!({ "APP_NAME" => "" }) }
+    assert_raises(EnvPact::ValidationError) { s.validate!({ "APP_NAME" => "" }) }
   end
 
   # ── type checks ───────────────────────────────────────────────────
@@ -38,7 +38,7 @@ class TestValidator < Minitest::Test
   def test_int_parses
     s = spec("PORT: int")
     assert s.validate!({ "PORT" => "3000" })
-    err = assert_raises(EnvSpec::ValidationError) { s.validate!({ "PORT" => "abc" }) }
+    err = assert_raises(EnvPact::ValidationError) { s.validate!({ "PORT" => "abc" }) }
     assert_match(/not a valid int/, err.message)
   end
 
@@ -47,13 +47,13 @@ class TestValidator < Minitest::Test
     %w[true false 1 0 yes no TRUE False].each do |v|
       assert s.validate!({ "DEBUG" => v }), "expected #{v.inspect} to be valid bool"
     end
-    assert_raises(EnvSpec::ValidationError) { s.validate!({ "DEBUG" => "nope" }) }
+    assert_raises(EnvPact::ValidationError) { s.validate!({ "DEBUG" => "nope" }) }
   end
 
   def test_enum_validates_membership
     s = spec("TIER: enum(free, pro, enterprise)")
     assert s.validate!({ "TIER" => "pro" })
-    err = assert_raises(EnvSpec::ValidationError) { s.validate!({ "TIER" => "team" }) }
+    err = assert_raises(EnvPact::ValidationError) { s.validate!({ "TIER" => "team" }) }
     assert_match(/not in enum/, err.message)
   end
 
@@ -74,7 +74,7 @@ class TestValidator < Minitest::Test
 
     assert s.validate!({ "APP_NAME" => "x" }, env: "staging")
     assert s.validate!({ "APP_NAME" => "x", "DB_HOST" => "db.local" }, env: "production")
-    err = assert_raises(EnvSpec::ValidationError) do
+    err = assert_raises(EnvPact::ValidationError) do
       s.validate!({ "APP_NAME" => "x" }, env: "production")
     end
     assert_match(/DB_HOST/, err.message)
@@ -82,7 +82,7 @@ class TestValidator < Minitest::Test
 
   def test_secret_required_too
     s = spec("[secrets]\nDB_PASS")
-    assert_raises(EnvSpec::ValidationError) { s.validate!({}) }
+    assert_raises(EnvPact::ValidationError) { s.validate!({}) }
     assert s.validate!({ "DB_PASS" => "hunter2" })
   end
 
@@ -90,7 +90,7 @@ class TestValidator < Minitest::Test
 
   def test_strict_flags_extras
     s = spec("APP_NAME")
-    err = assert_raises(EnvSpec::ValidationError) do
+    err = assert_raises(EnvPact::ValidationError) do
       s.validate!({ "APP_NAME" => "x", "EXTRA_VAR" => "y" }, strict: true)
     end
     assert_match(/unknown env var 'EXTRA_VAR'/, err.message)
@@ -105,7 +105,7 @@ class TestValidator < Minitest::Test
 
   def test_aggregates_all_problems
     s = spec("APP_NAME\nPORT: int\n[secrets]\nDB_PASS")
-    err = assert_raises(EnvSpec::ValidationError) { s.validate!({ "PORT" => "abc" }) }
+    err = assert_raises(EnvPact::ValidationError) { s.validate!({ "PORT" => "abc" }) }
     assert_equal 3, err.problems.size
   end
 end

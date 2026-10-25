@@ -1,4 +1,4 @@
-class EnvSpec
+class EnvPact
   # Validates an env hash (or ENV) against a parsed spec.
   #
   # Checks:
@@ -9,7 +9,7 @@ class EnvSpec
   # Usage:
   #   spec.validate!(ENV.to_h, env: "production")
   #
-  # Raises EnvSpec::ValidationError with a list of all problems found.
+  # Raises EnvPact::ValidationError with a list of all problems found.
   def validate!(env_hash, env: SHARED, strict: false)
     problems = validate(env_hash, env: env, strict: strict)
     raise ValidationError.new(problems) unless problems.empty?

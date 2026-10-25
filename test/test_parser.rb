@@ -2,11 +2,11 @@ require_relative "test_helper"
 
 class TestParser < Minitest::Test
   def parse(text)
-    EnvSpec.parse(text)
+    EnvPact.parse(text)
   end
 
   def assert_raises_parse(msg_pattern, &block)
-    err = assert_raises(EnvSpec::ParseError, &block)
+    err = assert_raises(EnvPact::ParseError, &block)
     assert_match msg_pattern, err.message
   end
 

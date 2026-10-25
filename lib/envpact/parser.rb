@@ -14,7 +14,7 @@
 # Output:
 #   configmap = { "*" => { "KEY" => Entry }, "production" => {...} }
 #   secrets   = { "*" => { "DB_PASS" => Entry }, "production" => {...} }
-class EnvSpec
+class EnvPact
   SHARED = "*".freeze
   VALID_TYPES = %i[str int bool dsn enum].freeze
   ENV_NAME_RE = /\A[A-Za-z0-9_-]+\z/.freeze

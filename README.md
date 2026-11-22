@@ -63,6 +63,10 @@ DEBUG?: bool
 PORT: int = 3000
 PUBLIC_URL: url
 
+[source]
+openbao path=team/myapp/{env}
+openbao path=cluster/selly/myapp-web env=production
+
 [secrets]
 DB_PASS
 OPENAI_API_KEY
@@ -100,6 +104,10 @@ FEATURE_FLAGS?
   declared in overlapping scopes, may not be both ConfigMap and Secret, and must
   have the same type in every env.
 - Empty values count as absent.
+- `[source]` — where the secrets of each env live, one `openbao path=… [mount=secret]
+  [addr=URL] [env=a,b]` line per source. A line without `env=` is the fallback; one
+  with `env=` wins for those envs. `{env}` is the only placeholder in `path`.
+- After `[source]` any other header resumes keys; `[secrets]` there applies to shared.
 
 ## Library API
 

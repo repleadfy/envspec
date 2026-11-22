@@ -20,7 +20,7 @@ class EnvPact
   VALID_TYPES = %i[str int bool url enum].freeze
   ENV_NAME_RE = /\A[A-Za-z0-9_-]+\z/.freeze
 
-  attr_reader :configmap, :secrets
+  attr_reader :configmap, :secrets, :sources
 
   def self.parse(text)
     new.tap { |spec| spec.send(:_parse, text) }
@@ -33,6 +33,13 @@ class EnvPact
   def initialize
     @configmap = {}
     @secrets   = {}
+    @sources   = []
+  end
+
+  # Where the secrets of env live (a SourceRef from the [source] section),
+  # or nil when the spec has none for that env.
+  def source_for(env)
+    SourceParser.resolve(@sources, env)
   end
 
   # Returns array of env names declared in the spec (excluding "*").
@@ -61,6 +68,7 @@ class EnvPact
   def _parse(text)
     scope = [SHARED]
     type  = :configmap
+    in_source = false
 
     text = EnvPact.utf8(text).sub(/\A\uFEFF/, "")
     text.each_line.with_index(1) do |raw, line_no|
@@ -69,7 +77,14 @@ class EnvPact
 
       if line.start_with?("[") && line.end_with?("]")
         inner = line[1..-2].strip
-        if inner == "secrets"
+        in_source = false
+        if inner == "source"
+          # No previous scope to inherit: keys after the next header start
+          # from shared.
+          in_source = true
+          scope = [SHARED]
+          type  = :configmap
+        elsif inner == "secrets"
           type = :secret
         elsif inner == "shared"
           scope = [SHARED]
@@ -88,8 +103,13 @@ class EnvPact
           scope = envs
           type  = :configmap
         else
-          raise ParseError.new("unknown header [#{inner}] (only [secrets], [shared] and [env: ...] allowed)", line_no)
+          raise ParseError.new("unknown header [#{inner}] (only [secrets], [shared], [source] and [env: ...] allowed)", line_no)
         end
+        next
+      end
+
+      if in_source
+        SourceParser.add(@sources, SourceParser.parse_line(line, line_no))
         next
       end
 

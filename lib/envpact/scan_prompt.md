@@ -44,6 +44,8 @@ Use exactly this syntax:
 
 {{SYNTAX}}
 
+Do not invent a `[source]` section: if the file already has one, preserve it as is.
+
 Put shared keys on top. Group related keys with a short comment. If `env.spec`
 already exists, update it in place: keep its comments and existing decisions, add
 what is missing, and never silently drop a key — if a declared key looks unused,

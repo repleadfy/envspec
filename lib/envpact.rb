@@ -1,6 +1,7 @@
 require_relative "envpact/version"
 require_relative "envpact/errors"
 require_relative "envpact/entry"
+require_relative "envpact/source_ref"
 require_relative "envpact/parser"
 require_relative "envpact/types"
 require_relative "envpact/problem"

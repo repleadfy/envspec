@@ -39,21 +39,8 @@ class EnvPact
         # stderr, so the app's stdout stays its own; shows which sections
         # applied, which is how an ENVPACT_ENV typo becomes visible at boot.
         warn "✓ #{File.basename(spec_path(opts))} satisfied (#{scope_label(spec, result)})"
-        fill_defaults(spec, env)
-        Kernel.exec(*@command)
-      rescue Errno::ENOENT
-        die("command not found: #{@command.first}", 127)
-      rescue Errno::EACCES, Errno::ENOEXEC => e
-        die("cannot execute: #{@command.first} (#{e.message})", 126)
-      end
-
-      private
-
-      def fill_defaults(spec, env)
-        spec.configmap_for(env).each do |key, entry|
-          next if entry.default.nil?
-          ENV[key] = entry.default if ENV[key].nil? || ENV[key].empty?
-        end
+        Boot.fill_defaults(spec, env)
+        Boot.exec_command(@command)
       end
     end
   end

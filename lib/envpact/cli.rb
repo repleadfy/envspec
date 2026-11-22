@@ -7,6 +7,7 @@ require_relative "cli/unlock"
 require_relative "cli/lock"
 require_relative "cli/status"
 require_relative "cli/pull"
+require_relative "cli/run"
 require_relative "cli/scan_prompt"
 
 class EnvPact
@@ -25,6 +26,7 @@ class EnvPact
       "lock" => Lock,
       "status" => Status,
       "pull" => Pull,
+      "run" => Run,
       "scan-prompt" => ScanPromptCommand,
     }.freeze
 

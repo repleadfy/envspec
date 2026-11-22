@@ -17,11 +17,6 @@ class EnvPact
       DURATION_RE = /\A(\d+)([smh])\z/.freeze
       UNIT = { "s" => 1, "m" => 60, "h" => 3600 }.freeze
 
-      def initialize(prompt: EnvPact::Prompt.new)
-        super()
-        @prompt = prompt
-      end
-
       def default_opts
         { for: "2h" }
       end

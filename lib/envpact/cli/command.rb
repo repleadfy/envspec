@@ -37,9 +37,10 @@ class EnvPact
         end
       end
 
-      def initialize
+      def initialize(prompt: nil)
         @opts = default_opts
         @help_requested = false
+        @prompt = prompt || EnvPact::Prompt.new
       end
 
       def default_opts
@@ -109,6 +110,35 @@ class EnvPact
 
       # Prints the result and returns the exit code. reveal: is the values
       # hash when the user asked for --show-values; extras never show values.
+      # An OpenBao client for reading env's secrets, with the read token from
+      # the agent or ~/.ob_read. The token is only ever sent to the address it
+      # was issued for: a spec (or $BAO_ADDR) naming another address is
+      # refused rather than followed.
+      def read_client(ref)
+        cred = Credentials.new(prompt: @prompt).read_token
+        wanted = ref.addr || (ENV["BAO_ADDR"] unless ENV["BAO_ADDR"].to_s.empty?)
+        if wanted && cred[:addr] && wanted.sub(%r{/+\z}, "") != cred[:addr].sub(%r{/+\z}, "")
+          raise EnvPact::Error, "refusing to send the OpenBao token to a different address than the one it was " \
+                                "issued for (#{cred[:addr]} vs #{wanted}); run envpact login --read --addr=#{wanted}"
+        end
+        OpenBao::Client.new(addr: cred[:addr] || wanted, token: cred[:token], role: :read)
+      end
+
+      # The env's secrets from OpenBao (see EnvPact::Source.fetch). Extras
+      # found in the source go to warnings.
+      def fetch_source(spec, env, warnings: nil)
+        ref = spec.source_for(env)
+        raise EnvPact::Error, "no [source] for env '#{env}' in env.spec" if ref.nil?
+        client = read_client(ref)
+        values = Source.fetch(spec, env: env, client: client, warnings: warnings)
+        begin
+          client.renew_self # keeps the monthly login monthly
+        rescue OpenBao::Error
+          nil
+        end
+        values
+      end
+
       def report(spec, result, opts, reveal: nil)
         name  = File.basename(spec_path(opts))
         scope = "(#{scope_label(spec, result)})"

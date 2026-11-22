@@ -23,10 +23,12 @@ class EnvPact
         o.on("--from-env", "Check the current process ENV, not files") { opts[:from_env] = true }
         o.on("--strict", "Treat unknown env vars as errors")           { opts[:strict] = true }
         o.on("--show-values", "Show secret values in problem messages") { opts[:show_values] = true }
+        o.on("--source", "Also read the env's secrets from OpenBao (in memory, nothing is written)") { opts[:source] = true }
       end
 
       def call(_rest, opts)
         env = opts[:env] or raise UsageError, "--env=NAME is required"
+        raise UsageError, "--show-values cannot be combined with --source" if opts[:source] && opts[:show_values]
         spec = load_spec(opts)
 
         if opts[:from_env]
@@ -37,7 +39,11 @@ class EnvPact
           puts "Read: #{loaded[:files].empty? ? '(no .env files found)' : loaded[:files].join(', ')}"
         end
 
+        source_warnings = []
+        values = values.merge(fetch_source(spec, env, warnings: source_warnings)) if opts[:source]
+
         result = spec.check(values, env: env, strict: opts[:strict], extras: !opts[:from_env])
+        source_warnings.each { |p| warn "  ! #{p.message}" }
         report(spec, result, opts, reveal: opts[:show_values] ? values : nil)
       end
     end

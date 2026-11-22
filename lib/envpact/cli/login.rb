@@ -18,11 +18,6 @@ class EnvPact
 
       MIN_PASSPHRASE = 12
 
-      def initialize(prompt: EnvPact::Prompt.new)
-        super()
-        @prompt = prompt
-      end
-
       def default_opts
         { oidc_mount: "oidc", port: 8250, token_stdin: false }
       end

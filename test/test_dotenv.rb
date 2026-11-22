@@ -72,4 +72,46 @@ class TestDotenv < Minitest::Test
       assert_equal({ "A" => "1" }, r[:values])
     end
   end
+
+  def test_dump_roundtrip
+    h = {
+      "A" => "a\nb", "B" => 'q"q', "C" => 'back\\slash', "D" => "x # y", "E" => "trail ",
+      "F" => "", "G" => "ünï", "H" => "lit\\nnewline", "I" => "'single'", "J" => "  lead",
+      "K" => "tab\tbed", "L" => "a\\", "M" => "\\\\n", "N" => "#start", "O" => "=eq=", "P" => "$HOME ${X}"
+    }
+    assert_equal h, EnvPact::Dotenv.parse(EnvPact::Dotenv.dump(h))
+  end
+
+  def test_dump_is_sorted_and_quoted
+    assert_equal %(A="1"\nB="2"\n), EnvPact::Dotenv.dump("B" => "2", "A" => "1")
+  end
+
+  def test_dump_escapes
+    assert_equal %(A="a\\nb\\"c\\\\d"\n), EnvPact::Dotenv.dump("A" => "a\nb\"c\\d")
+  end
+
+  def test_dump_empty_hash
+    assert_equal "", EnvPact::Dotenv.dump({})
+  end
+
+  def test_dump_rejects_cr
+    err = assert_raises(EnvPact::Error) { EnvPact::Dotenv.dump("TOKEN" => "a\rb") }
+    assert_includes err.message, "TOKEN"
+    refute_includes err.message, "a\rb"
+  end
+
+  def test_dump_rejects_bad_key
+    err = assert_raises(EnvPact::Error) { EnvPact::Dotenv.dump("A B" => "x") }
+    assert_includes err.message, "A B"
+  end
+
+  def test_load_skips_given_file
+    Dir.mktmpdir do |d|
+      File.write(File.join(d, ".env"), "A=1\n")
+      File.write(File.join(d, ".env.development.local"), "A=old\nB=old\n")
+      r = EnvPact::Dotenv.load(d, env: "development", skip: [File.join(d, ".env.development.local")])
+      assert_equal %w[.env], r[:files]
+      assert_equal({ "A" => "1" }, r[:values])
+    end
+  end
 end

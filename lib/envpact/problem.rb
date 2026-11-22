@@ -1,7 +1,8 @@
 class EnvPact
   # One thing wrong with a set of values checked against a spec.
   #
-  # kind is :missing, :invalid or :extra. value is the offending value for
+  # kind is :missing, :invalid or :extra (type: :source marks an extra found
+  # in the OpenBao source rather than in the values). value is the offending value for
   # configmap keys only -- it is always nil for secrets and extras, so a
   # Problem can be printed or logged without leaking a secret.
   Problem = Struct.new(:kind, :key, :secret, :line, :value, :type, :enum_values, keyword_init: true) do
@@ -22,6 +23,7 @@ class EnvPact
       when :missing
         "missing required env var '#{key}' (declared at line #{problem.line})"
       when :extra
+        return "key '#{key}' in the source is not a declared secret for this env (ignored)" if problem.type == :source
         "unknown env var '#{key}' (not declared in spec)"
       when :invalid
         subject = value.nil? ? "env var '#{key}' (secret)" : "env var '#{key}' = #{value.inspect}"

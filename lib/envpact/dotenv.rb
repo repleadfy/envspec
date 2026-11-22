@@ -16,11 +16,14 @@ class EnvPact
       files
     end
 
-    def self.load(dir, env:)
+    # skip: absolute paths to leave out (the pull target is never an input).
+    def self.load(dir, env:, skip: [])
       files  = []
       values = {}
+      skipped = skip.map { |f| File.expand_path(f) }
       files_for(env).each do |name|
         path = File.join(dir, name)
+        next if skipped.include?(File.expand_path(path))
         next unless File.file?(path)
         files << name
         values.merge!(parse(EnvPact.read_text(path)))

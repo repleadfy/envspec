@@ -3,6 +3,9 @@ require_relative "cli/lint"
 require_relative "cli/check"
 require_relative "cli/exec"
 require_relative "cli/login"
+require_relative "cli/unlock"
+require_relative "cli/lock"
+require_relative "cli/status"
 require_relative "cli/scan_prompt"
 
 class EnvPact
@@ -17,6 +20,9 @@ class EnvPact
       "check" => Check,
       "exec"  => Exec,
       "login" => Login,
+      "unlock" => Unlock,
+      "lock" => Lock,
+      "status" => Status,
       "scan-prompt" => ScanPromptCommand,
     }.freeze
 

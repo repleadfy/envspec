@@ -11,15 +11,17 @@ class EnvPact
       when :int  then !Integer(raw, 10).nil?
       when :bool then BOOL_VALUES.include?(raw.downcase)
       when :enum then enum_values.include?(raw)
-      when :url  then valid_url?(raw)
+      when :url  then valid_url?(raw, enum_values)
       end
     rescue ArgumentError
       false
     end
 
-    def self.valid_url?(raw)
+    # schemes (optional) restricts the scheme, compared case-insensitively.
+    def self.valid_url?(raw, schemes = nil)
       uri = URI.parse(raw)
-      !uri.scheme.nil? && !uri.host.nil? && !uri.host.empty?
+      return false if uri.scheme.nil? || uri.host.nil? || uri.host.empty?
+      schemes.nil? || schemes.include?(uri.scheme.downcase)
     rescue URI::InvalidURIError
       false
     end

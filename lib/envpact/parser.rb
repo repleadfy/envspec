@@ -161,6 +161,13 @@ class EnvPact
       values = em[1].split(",").map(&:strip).reject(&:empty?)
       raise ParseError.new("enum requires at least one value", line_no) if values.empty?
       [:enum, values]
+    elsif type_str.start_with?("url(")
+      unless (um = type_str.match(/\Aurl\((.*)\)\z/))
+        raise ParseError.new("malformed url type: #{type_str}", line_no)
+      end
+      schemes = um[1].split(",").map { |v| v.strip.downcase }.reject(&:empty?)
+      raise ParseError.new("url() needs at least one scheme", line_no) if schemes.empty?
+      [:url, schemes]
     else
       sym = type_str.to_sym
       unless VALID_TYPES.include?(sym)

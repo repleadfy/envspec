@@ -33,6 +33,8 @@ class EnvPact
       case type
       when :bool then "is not a valid bool #{BOOL_HINT}"
       when :enum then "is not in enum(#{enum_values.join(', ')})"
+      when :url
+        enum_values.nil? ? "is not a valid url" : "is not a valid url (scheme: #{enum_values.join(', ')})"
       else "is not a valid #{type}"
       end
     end

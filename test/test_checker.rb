@@ -66,6 +66,17 @@ class TestChecker < Minitest::Test
     assert_equal [%(env var 'TIER' = "team" is not in enum(free, pro))], r.errors.map(&:message)
   end
 
+  def test_url_scheme_rejected
+    r = check("DB: url(postgres, redis)", { "DB" => "mysql://h/db" })
+    assert_equal 1, r.errors.size
+    assert_equal :invalid, r.errors.first.kind
+    assert_includes r.errors.first.message, "(scheme: postgres, redis)"
+  end
+
+  def test_url_scheme_case_insensitive
+    assert check("DB: url(postgres)", { "DB" => "POSTGRES://h/db" }).ok?
+  end
+
   def test_url_validation
     %w[postgres://u:p@h:5432/db redis://h:6379/0 https://x.y].each do |v|
       assert check("U: url", { "U" => v }).ok?, v

@@ -27,6 +27,7 @@ FEATURE_FLAGS?
 - `KEY: type` — `str` (default) | `int` | `bool` | `url` | `enum(a, b, c)`.
   - `bool` accepts `true false 1 0 yes no` (any case).
   - `url` needs a scheme and a host: `postgres://u:p@h:5432/db`, `https://x.y`.
+  - `url(postgres, redis)` also restricts the scheme (case-insensitive).
 - `KEY = default` — default value, ConfigMap only; secrets cannot have defaults.
   The default must be valid for the type (`PORT: int = 3OOO` is a lint error).
   Quote it to keep `#` or surrounding spaces: `GREETING = "hi # there "`

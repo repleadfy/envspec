@@ -246,6 +246,32 @@ class TestParser < Minitest::Test
     assert_equal :url, parse("DATABASE_URL: url").configmap["*"]["DATABASE_URL"].type
   end
 
+  def test_url_with_schemes
+    e = parse("DB: url(postgres, redis)").configmap["*"]["DB"]
+    assert_equal :url, e.type
+    assert_equal %w[postgres redis], e.enum_values
+  end
+
+  def test_url_schemes_are_downcased
+    assert_equal %w[postgres], parse("DB: url(POSTGRES)").configmap["*"]["DB"].enum_values
+  end
+
+  def test_url_empty_scheme_list
+    assert_raises_parse(/url\(\) needs at least one scheme/) { parse("DB: url()") }
+    assert_raises_parse(/url\(\) needs at least one scheme/) { parse("DB: url( , )") }
+  end
+
+  def test_url_default_checked_against_schemes
+    assert_raises_parse(/default "http:\/\/x" for 'U' is not a valid url \(scheme: https\)/) { parse("U: url(https) = http://x") }
+    assert parse("U: url(https) = https://x")
+  end
+
+  def test_url_types_differing_across_envs_error
+    assert_raises_parse(/different types across envs/) do
+      parse("[env: a]\nDB: url(postgres)\n[env: b]\nDB: url(redis)")
+    end
+  end
+
   def test_dsn_type_removed
     assert_raises_parse(/unknown type 'dsn'/) { parse("X: dsn") }
   end

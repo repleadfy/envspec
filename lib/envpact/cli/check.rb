@@ -4,10 +4,10 @@ class EnvPact
   class CLI
     class Check < Command
       command_name "check"
-      summary "Check .env files (or process ENV) against an env.spec"
+      summary "Check .env files (or process ENV) against the contract (envpact.yml)"
       banner "Usage: envpact check --env=NAME [options]"
       description <<~DESC
-        Validates values against an env.spec for one env. By default reads the
+        Validates values against the contract (envpact.yml) for one env. By default reads the
         dotenv files for that env from the current directory
         (.env, .env.<env>, .env.local, .env.<env>.local; .env.local is skipped
         for test). Secret values are never printed unless --show-values.

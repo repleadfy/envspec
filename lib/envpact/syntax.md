@@ -1,53 +1,60 @@
+```yaml
+version: 1
+
+source:                          # where the secrets live; {env} becomes the env name
+  openbao:
+    path: "team/myapp/{env}"
+    # addr: "https://bao.example.com"   # optional
+    # mount: secret                     # optional, default secret
+
+vars:                            # ConfigMap keys, shared by every env
+  APP_NAME:                      # empty value = required string
+  LOG_LEVEL: {type: "enum(debug, info, warn, error)", default: "info"}
+  DEBUG: {type: bool, optional: true}
+  PORT: {type: int, default: "3000", description: "HTTP port"}
+  PUBLIC_URL: url
+
+secrets:                         # Secret keys, shared by every env
+  DB_PASS:
+  OPENAI_API_KEY:
+
+envs:                            # only for what differs per env
+  production:
+    source:
+      openbao:
+        path: "cluster/selly/myapp-web"
+    vars:
+      SENTRY_DSN: url
+    secrets:
+      STRIPE_LIVE_KEY:
+  "production, staging":         # one key, several envs
+    vars:
+      CDN_HOST:
 ```
-# shared (all envs) -- the top of the file is the default for every env
-APP_NAME
-LOG_LEVEL: enum(debug, info, warn, error) = info
-DEBUG?: bool
-PORT: int = 3000
-PUBLIC_URL: url
 
-[source]
-openbao path=team/myapp/{env}
-openbao path=cluster/selly/myapp-web env=production
-
-[secrets]
-DB_PASS
-OPENAI_API_KEY
-
-[env: production]
-SENTRY_DSN: url
-[secrets]
-STRIPE_LIVE_KEY
-
-[env: production, staging]
-CDN_HOST
-
-[shared]
-FEATURE_FLAGS?
-```
-
-- `KEY` — required string, ConfigMap, in the current scope.
-- `KEY?` — optional.
-- `KEY: type` — `str` (default) | `int` | `bool` | `url` | `enum(a, b, c)`.
+- `version: 1` is required. Unknown keys and fields are errors.
+- A key's value is one of:
+  - empty — required string;
+  - a type — `str` | `int` | `bool` | `url` | `url(a, b)` | `enum(a, b, c)`;
+  - a mapping with `type`, `default`, `optional` (`true`/`false`) and
+    `description`.
+- Types:
   - `bool` accepts `true false 1 0 yes no` (any case).
   - `url` needs a scheme and a host: `postgres://u:p@h:5432/db`, `https://x.y`.
   - `url(postgres, redis)` also restricts the scheme (case-insensitive).
-- `KEY = default` — default value, ConfigMap only; secrets cannot have defaults.
-  The default must be valid for the type (`PORT: int = 3OOO` is a lint error).
-  Quote it to keep `#` or surrounding spaces: `GREETING = "hi # there "`
-  (only `\"` and `\\` are escapes; any other backslash is kept).
-- `[secrets]` — modifier: following keys are Secrets; scope unchanged.
-- `[env: name]` / `[env: a, b]` — selector: following keys apply only to those
-  envs; type resets to ConfigMap. Env names are free-form (`[A-Za-z0-9_-]+`).
-- `[shared]` — selector: back to the shared scope (all envs); type resets to
-  ConfigMap.
-- `#` starts a comment at the start of a line or after whitespace
-  (`URL = http://x/a#frag` keeps the `#frag`).
-- An env with no `[env: …]` section gets only the shared keys. A key may not be
-  declared in overlapping scopes, may not be both ConfigMap and Secret, and must
-  have the same type in every env.
+  - Inside `{...}` a comma splits fields: quote `enum(...)`/`url(...)` there,
+    as in `{type: "enum(a, b)"}`. Quote paths with `{env}` too.
+- `default` is ConfigMap only; secrets cannot have defaults. It must be valid
+  for the type (`{type: int, default: "3OOO"}` is a lint error).
+- Every value is read as plain text: `no`, `on`, `0.30` and `0800` stay
+  strings, never YAML booleans or numbers. Quote to keep `#` or spaces.
+- Anchors, aliases and tags (`&x`, `*x`, `!!str`) are not allowed.
+- Key names are `A-Z`, `0-9` and `_`, starting with a letter. Env names are
+  `[A-Za-z0-9_-]+`.
+- An env with no entry under `envs` gets only the shared keys. A key may not be
+  declared both shared and per env, may not be both ConfigMap and Secret, and
+  must have the same type in every env.
 - Empty values count as absent.
-- `[source]` — where the secrets of each env live, one `openbao path=… [mount=secret]
-  [addr=URL] [env=a,b]` line per source. A line without `env=` is the fallback; one
-  with `env=` wins for those envs. `{env}` is the only placeholder in `path`.
-- After `[source]` any other header resumes keys; `[secrets]` there applies to shared.
+- `source` at the top is the fallback; `envs.<name>.source` wins for that env.
+- The legacy `env.spec` format is still read, with a warning; `envpact convert`
+  writes the equivalent `envpact.yml`.

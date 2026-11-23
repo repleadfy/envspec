@@ -1,6 +1,6 @@
-# Task: build or update this repo's env.spec
+# Task: build or update this repo's envpact.yml
 
-You are working in a code repository. Produce `env.spec` at the repo root: the
+You are working in a code repository. Produce `envpact.yml` at the repo root: the
 env var contract for this app, checked by `envpact` locally, before deploy and at
 boot. The contract lists **names, types and rules only — never values.**
 
@@ -28,25 +28,29 @@ to learn key names.
 ## 2. Classify each var
 
 - **Secret or ConfigMap:** passwords, tokens, API keys, private keys, connection
-  strings with credentials → `[secrets]`. Everything else → ConfigMap.
+  strings with credentials → `secrets:`. Everything else → `vars:` (ConfigMap).
 - **Type:** `int`, `bool`, `url` or `enum(...)` when the code parses or compares
   it that way; otherwise `str`.
-- **Optional (`?`):** the code tolerates absence (fallback, `fetch` default,
+- **Optional (`optional: true`):** the code tolerates absence (fallback, `fetch` default,
   `|| default`, feature off when unset). Otherwise required.
-- **Default (`= value`):** only literal, non-secret defaults that the code itself
+- **Default (`default: "value"`):** only literal, non-secret defaults that the code itself
   uses. Never invent one.
 - **Scope:** shared unless the var is clearly specific to some envs (e.g. only in
-  production config or only in `app_<env>.yml`) → `[env: name]` section.
+  production config or only in `app_<env>.yml`) → under `envs: <name>:`.
 
-## 3. Write env.spec
+## 3. Write envpact.yml
 
 Use exactly this syntax:
 
 {{SYNTAX}}
 
-Do not invent a `[source]` section: if the file already has one, preserve it as is.
+Do not invent a `source`: if the file already has one, preserve it as is.
 
-Put shared keys on top. Group related keys with a short comment. If `env.spec`
+If the repo has a legacy `env.spec` and no `envpact.yml`, run `envpact convert`
+first, delete the `env.spec`, and work on the `envpact.yml`.
+
+Put shared keys first (`vars`, `secrets`), then `envs`. Use the long form
+`{type: ..., description: "..."}` when a short note helps the next reader. Group related keys with a short comment. If `envpact.yml`
 already exists, update it in place: keep its comments and existing decisions, add
 what is missing, and never silently drop a key — if a declared key looks unused,
 keep it and flag it.
@@ -56,8 +60,9 @@ keep it and flag it.
 Above any key whose classification is a guess, add a comment:
 
 ```
-# TODO(envpact): looks like a secret (used as Authorization header) — confirm
-API_TOKEN
+secrets:
+  # TODO(envpact): looks like a secret (used as Authorization header) — confirm
+  API_TOKEN:
 ```
 
 ## 5. Validate and report

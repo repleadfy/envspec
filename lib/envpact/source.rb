@@ -8,7 +8,7 @@ class EnvPact
     # value is appended for each. A path that does not exist yields {}.
     def self.fetch(spec, env:, client:, warnings: nil)
       ref = spec.source_for(env)
-      raise Error, "no [source] for env '#{env}' in env.spec" if ref.nil?
+      raise Error, "no source for env '#{env}' in the contract" if ref.nil?
 
       data   = client.read(ref.mount, ref.path) || {}
       wanted = spec.secrets_for(env)

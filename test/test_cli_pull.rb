@@ -157,7 +157,7 @@ class TestCliPull < Minitest::Test
     File.write(File.join(@work, "env.spec"), "[secrets]\nDB_PASS\n")
     code, _, err = run_cli("pull", "--env=development")
     assert_equal 1, code
-    assert_includes err, "no [source] for env 'development' in env.spec"
+    assert_includes err, "no source for env 'development' in the contract"
   end
 
   def test_pull_requires_env

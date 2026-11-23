@@ -110,7 +110,7 @@ class TestRun < Minitest::Test
     code, out, err = envpact({}, "--env=dev", "--", *PRINT.call('print "RAN"'))
     assert_equal 1, code
     assert_equal "", out
-    assert_includes err, "no [source] for env 'dev' in env.spec"
+    assert_includes err, "no source for env 'dev' in the contract"
   end
 
   def test_run_command_not_found

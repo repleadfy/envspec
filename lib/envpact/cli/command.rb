@@ -13,7 +13,7 @@ class EnvPact
     #   - configure(parser, opts) — define options on the OptionParser
     #   - call(argv, opts) — execute; return exit code
     class Command
-      DEFAULT_SPEC = "env.spec".freeze
+      DEFAULT_SPEC = EnvPact::YAML_FILE
 
       class << self
         def command_name(value = nil)
@@ -95,16 +95,17 @@ class EnvPact
       end
 
       def spec_option(o, opts)
-        o.on("--spec=PATH", "Contract file (default: $ENVPACT_SPEC or ./#{DEFAULT_SPEC})") { |v| opts[:spec] = v }
+        o.on("--spec=PATH", "Contract file (default: $ENVPACT_SPEC, ./#{DEFAULT_SPEC}, or the legacy ./#{EnvPact::LEGACY_FILE})") { |v| opts[:spec] = v }
       end
 
       def spec_path(opts)
-        opts[:spec] || ENV["ENVPACT_SPEC"] || DEFAULT_SPEC
+        opts[:spec] || ENV["ENVPACT_SPEC"] || EnvPact.locate(".").first
       end
 
       def load_spec(opts)
         path = spec_path(opts)
         raise EnvPact::Error, "spec not found: #{path}" unless File.file?(path)
+        warn "envpact: #{EnvPact::LEGACY_WARNING}" if File.basename(path) == EnvPact::LEGACY_FILE
         EnvPact.parse_file(path)
       end
 
@@ -114,7 +115,7 @@ class EnvPact
       # found in the source go to warnings.
       def fetch_source(spec, env, warnings: nil)
         ref = spec.source_for(env)
-        raise EnvPact::Error, "no [source] for env '#{env}' in env.spec" if ref.nil?
+        raise EnvPact::Error, "no source for env '#{env}' in the contract" if ref.nil?
         client = Credentials.new(prompt: @prompt).read_client(ref.addr)
         values = Source.fetch(spec, env: env, client: client, warnings: warnings)
         begin

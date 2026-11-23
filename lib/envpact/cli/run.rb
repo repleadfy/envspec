@@ -8,7 +8,7 @@ class EnvPact
       summary "Fetch the env's secrets from OpenBao, check, then exec CMD with them"
       banner "Usage: envpact run [--env=NAME] [--spec=PATH] -- CMD [ARGS...]"
       description <<~DESC
-        Reads the secrets of the env from the [source] in env.spec and puts them
+        Reads the secrets of the env from the source in envpact.yml and puts them
         in the environment of CMD only: nothing is written to disk, and the
         OpenBao token never reaches CMD. Values from the source override the
         current ENV. The result is checked against the contract (unknown ENV

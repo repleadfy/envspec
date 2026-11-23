@@ -4,9 +4,9 @@ class EnvPact
   class CLI
     class Lint < Command
       command_name "lint"
-      summary "Parse and validate syntax of an env.spec file"
+      summary "Parse and validate syntax of the contract (envpact.yml, or the legacy env.spec)"
       banner "Usage: envpact lint [--spec=PATH]"
-      description "Parses an env.spec file and reports any syntax errors."
+      description "Parses the contract (envpact.yml, or the legacy env.spec) and reports any syntax errors."
 
       def configure(o, opts)
         spec_option(o, opts)

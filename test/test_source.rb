@@ -48,7 +48,7 @@ class TestSource < Minitest::Test
 
   def test_no_source_is_error
     err = assert_raises(EnvPact::Error) { EnvPact::Source.fetch(EnvPact.parse("[secrets]\nA\n"), env: "dev", client: @client) }
-    assert_equal "no [source] for env 'dev' in env.spec", err.message
+    assert_equal "no source for env 'dev' in the contract", err.message
   end
 
   def test_uses_mount_and_env_specific_path

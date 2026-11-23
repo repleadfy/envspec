@@ -11,6 +11,7 @@ require_relative "cli/run"
 require_relative "cli/push"
 require_relative "cli/set"
 require_relative "cli/scan_prompt"
+require_relative "cli/convert"
 
 class EnvPact
   # Dispatcher for `envpact` subcommands.
@@ -32,6 +33,7 @@ class EnvPact
       "push" => Push,
       "set" => Set,
       "scan-prompt" => ScanPromptCommand,
+      "convert" => Convert,
     }.freeze
 
     def self.run(argv)

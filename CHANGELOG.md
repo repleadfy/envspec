@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.0 — 2026-11-23
+
+- **The contract is now `envpact.yml`**, real YAML, instead of the `env.spec`
+  DSL: `version: 1`, `source`, `vars` (ConfigMap), `secrets` and `envs`. A key's
+  value is empty (required string), a type (`int`, `url(https)`,
+  `enum(a, b)`…) or `{type, default, optional, description}`. The model is the
+  same, so `configmap_for`, `secrets_for`, `source_for` and `check` are
+  unchanged.
+- YAML traps are closed: every value is read as the raw text of its node
+  (`no`, `on`, `0.30`, `0800` stay strings); anchors, aliases and tags are
+  refused; errors give the line and never echo a value.
+- **`env.spec` is still read**, with a warning, when there is no
+  `envpact.yml`. Both files at once is an error. `envpact convert` writes the
+  equivalent `envpact.yml` (never overwrites; comments are not carried over).
+- New `description` field (`Entry#description`).
+- API: `EnvPact.locate(dir)`, `EnvPact.parse_yaml(text)`,
+  `EnvPact#to_yaml_contract`; `EnvPact.parse_file` picks the format by
+  extension.
+- Messages no longer name `env.spec`: "no source for env 'x' in the contract".
+- `scan-prompt` now asks the agent for `envpact.yml`.
+
 ## 0.2.0 — 2026-11-22
 
 envpact now talks to [OpenBao](https://openbao.org) (KV v2) and keeps the

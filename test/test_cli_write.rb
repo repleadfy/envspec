@@ -194,7 +194,7 @@ class TestCliWrite < Minitest::Test
     File.write(File.join(@work, "env.spec"), "[secrets]\nDB_PASS\n")
     out, code = envpact("push --env=production --from=-", stdin: "DB_PASS=#{VALUE}")
     assert_equal 1, code, out
-    assert_includes out, "no [source] for env 'production'"
+    assert_includes out, "no source for env 'production'"
     assert_empty @bao.requests
   end
 

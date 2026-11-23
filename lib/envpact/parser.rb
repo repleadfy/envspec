@@ -26,8 +26,10 @@ class EnvPact
     new.tap { |spec| spec.send(:_parse, text) }
   end
 
+  # envpact.yml (or .yaml) is YAML; anything else is the legacy env.spec DSL.
   def self.parse_file(path)
-    parse(EnvPact.read_text(path))
+    text = EnvPact.read_text(path)
+    File.extname(path).match?(/\A\.ya?ml\z/i) ? parse_yaml(text) : parse(text)
   end
 
   def initialize
@@ -224,7 +226,8 @@ class EnvPact
         optional: e[:optional],
         default: e[:default],
         enum_values: e[:enum_values],
-        line: line_no
+        line: line_no,
+        description: e[:description]
       )
     end
 

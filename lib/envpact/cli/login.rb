@@ -13,7 +13,7 @@ class EnvPact
         and stores the token encrypted: ~/.ob_read (--read) or ~/.ob_write
         (--write). Without --role, --read uses the server's default role;
         --write needs --role (e.g. --role=escrita).
-        The address comes from --addr, $BAO_ADDR or addr= in the env.spec [source].
+        The address comes from --addr, $BAO_ADDR or the source addr in envpact.yml.
       DESC
 
       MIN_PASSPHRASE = 12

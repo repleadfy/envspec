@@ -26,7 +26,7 @@ class EnvPact
         spec = load_spec(opts)
 
         unless spec.secrets_for(env).key?(key)
-          return die("'#{key}' is not a declared secret for env '#{env}' in env.spec")
+          return die("'#{key}' is not a declared secret for env '#{env}' in the contract")
         end
         unless @prompt.available?
           return die(Prompt::NO_TTY)

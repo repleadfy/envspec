@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Leadfy"]
   spec.email         = ["dev@leadfy.com"]
   spec.summary       = "Env var contract for apps: one file, checked locally, before deploy and at boot"
-  spec.description   = "Parses env.spec files: a declarative contract describing which env vars an app expects, their types, optionality, and ConfigMap-vs-Secret classification, and syncs secrets with OpenBao. Pure stdlib, zero runtime dependencies."
+  spec.description   = "Parses envpact.yml (and legacy env.spec) files: a declarative contract describing which env vars an app expects, their types, optionality, and ConfigMap-vs-Secret classification, and syncs secrets with OpenBao. Pure stdlib, zero runtime dependencies."
   spec.homepage      = "https://github.com/repleadfy/envpact"
   spec.license       = "MIT"
   spec.required_ruby_version = ">= 2.5.0"

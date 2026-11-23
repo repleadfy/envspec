@@ -19,7 +19,7 @@ class EnvPact
       end
 
       ref = @spec.source_for(@env)
-      raise Error, "no [source] for env '#{@env}' in env.spec" if ref.nil?
+      raise Error, "no source for env '#{@env}' in the contract" if ref.nil?
 
       problems = validate(values)
       unless problems.empty?
@@ -56,7 +56,7 @@ class EnvPact
         entry = secrets[key]
         if entry.nil?
           problems << (configmap.key?(key) ? "'#{key}' is a ConfigMap key in env '#{@env}', not a secret" :
-                                             "'#{key}' is not declared in env.spec for env '#{@env}'")
+                                             "'#{key}' is not declared in the contract for env '#{@env}'")
         elsif values[key].nil? || values[key].empty?
           problems << "'#{key}' has an empty value"
         elsif values[key].include?("\0")

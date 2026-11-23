@@ -14,9 +14,10 @@ class TestScanPrompt < Minitest::Test
   end
 
   def test_syntax_example_is_a_valid_spec
-    example = syntax[/```\n(.*?)```/m, 1]
-    spec = EnvPact.parse(example)
-    assert spec.configmap["*"].key?("FEATURE_FLAGS")
+    example = syntax[/```yaml\n(.*?)```/m, 1]
+    spec = EnvPact.parse_yaml(example)
+    assert spec.configmap["*"].key?("APP_NAME")
+    assert_equal %w[production staging], spec.envs
     assert spec.secrets["production"].key?("STRIPE_LIVE_KEY")
   end
 

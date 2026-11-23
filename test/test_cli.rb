@@ -156,7 +156,7 @@ class TestCLI < Minitest::Test
     in_tmpdir do
       code, _, err = run_cli("check", "--env=x")
       assert_equal 1, code
-      assert_equal "envpact: spec not found: env.spec\n", err
+      assert_equal "envpact: spec not found: envpact.yml\n", err
     end
   end
 
@@ -166,7 +166,7 @@ class TestCLI < Minitest::Test
       File.chmod(0o000, "env.spec")
       code, _, err = run_cli("lint")
       assert_equal 1, code
-      assert_match(/\Aenvpact: Permission denied/, err)
+      assert_match(/^envpact: Permission denied/, err)
     end
   end
 
@@ -174,5 +174,41 @@ class TestCLI < Minitest::Test
     code, _, err = run_cli("lint", "--spec=/nonexistent/env.spec")
     assert_equal 1, code
     assert_equal "envpact: spec not found: /nonexistent/env.spec\n", err
+  end
+
+  # ── envpact.yml and the legacy env.spec ──────────────────────────
+
+  def test_lint_defaults_to_envpact_yml
+    in_tmpdir("envpact.yml" => "version: 1\nvars:\n  A:\n") do
+      code, out, err = run_cli("lint")
+      assert_equal 0, code
+      assert_includes out, "envpact.yml is valid"
+      assert_equal "", err
+    end
+  end
+
+  def test_legacy_env_spec_works_with_a_warning
+    in_tmpdir("env.spec" => "A\n") do
+      code, out, err = run_cli("lint")
+      assert_equal 0, code
+      assert_includes out, "env.spec is valid"
+      assert_includes err, "env.spec is deprecated: run `envpact convert`"
+    end
+  end
+
+  def test_both_contracts_is_an_error
+    in_tmpdir("env.spec" => "A\n", "envpact.yml" => "version: 1\n") do
+      code, _, err = run_cli("lint")
+      assert_equal 1, code
+      assert_includes err, "both envpact.yml and env.spec"
+    end
+  end
+
+  def test_check_with_envpact_yml
+    in_tmpdir("envpact.yml" => "version: 1\nvars:\n  A: int\n", ".env" => "A=12\n") do
+      code, out, _ = run_cli("check", "--env=dev")
+      assert_equal 0, code
+      assert_includes out, "✓ envpact.yml satisfied"
+    end
   end
 end

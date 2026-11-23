@@ -8,7 +8,7 @@ class EnvPact
       summary "Download the env's secrets from OpenBao into a 0600 dotenv file"
       banner "Usage: envpact pull --env=NAME [--out=PATH] [--spec=PATH]"
       description <<~DESC
-        Reads the secrets of one env from the [source] in env.spec, checks the
+        Reads the secrets of one env from the source in envpact.yml, checks the
         result against the contract (together with the .env* files, except the
         target itself) and, only if it is satisfied, writes the secrets to
         .env.<env>.local (or --out), mode 0600. The values are never printed.
@@ -26,7 +26,7 @@ class EnvPact
         spec = load_spec(opts)
         out  = opts[:out] || ".env.#{env}.local"
         ref  = spec.source_for(env)
-        raise EnvPact::Error, "no [source] for env '#{env}' in env.spec" if ref.nil?
+        raise EnvPact::Error, "no source for env '#{env}' in the contract" if ref.nil?
 
         # The target is the last file check reads, so stale values in it must
         # not satisfy the contract: leave it out of the merge.

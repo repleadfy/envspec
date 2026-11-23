@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.2.0 — 2026-11-22
+
+envpact now talks to [OpenBao](https://openbao.org) (KV v2) and keeps the
+env's secrets in sync with the contract.
+
+- **Scope change:** 0.1 read only your files and wrote nothing. 0.2 talks to
+  OpenBao and writes `~/.ob_read`, `~/.ob_write` and the `pull` target, always
+  mode 0600 (temp file + rename, never through a symlink). Nothing else is
+  written, and no secret or token is ever printed.
+- **`[source]` section** in `env.spec`: `openbao path=team/app/{env}
+  [mount=secret] [addr=URL] [env=a,b]`. API: `spec.source_for(env)`,
+  `spec.sources`, `EnvPact::Source.fetch`.
+- **`url(schemes)` type:** `url(postgres, redis)` restricts the URL scheme.
+- **`login`:** OIDC through a loopback listener, or `--token-stdin`; the token
+  is stored AES-256-GCM encrypted under a passphrase in `~/.ob_read` /
+  `~/.ob_write`.
+- **`unlock` / `lock` / `status`:** a local agent (Unix socket, your uid only)
+  holds the read token for a window.
+- **`pull`:** secrets into a 0600 `.env.<env>.local`, only if the contract is
+  satisfied.
+- **`run`:** like `exec`, with the secrets injected into the process only.
+- **`push` / `set`:** merge validated secrets into OpenBao after a y/N and the
+  write passphrase on the terminal; refused without a terminal.
+- **`check --source`:** check with the OpenBao secrets overlaid in memory.
+- Tests run with UTF-8 forced; `bundler` dev dependency is capped (`< 5`).
+
 ## 0.1.0 — 2026-10-25
 
 envpact is the successor of [envspec](https://rubygems.org/gems/envspec) 0.1.2:

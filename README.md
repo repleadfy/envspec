@@ -12,9 +12,12 @@ three moments:
    ENV and refuses to start the app if the contract isn't met.
 
 Pure Ruby, **zero runtime dependencies**, Ruby ≥ 2.5. envpact knows nothing about
-kdep, Infisical or Kubernetes: its interface is *contract + env name + values →
-ok or a list of problems*. It never writes to disk and never prints a secret
-value (unless you pass `--show-values`).
+kdep or Kubernetes: its interface is *contract + env name + values → ok or a
+list of problems*. It never prints a secret value (unless you pass
+`--show-values` to a local `check`). Since 0.2 it can also fetch and store the
+env's secrets in [OpenBao](https://openbao.org) (see below); that is the only
+thing it talks to, and the only files it writes are `~/.ob_read`, `~/.ob_write`
+and the target of `pull`, always mode 0600.
 
 ## Install
 
@@ -30,6 +33,15 @@ envpact check --env=test              # check .env, .env.test, .env.test.local
 envpact check --env=x --from-env      # check the current process ENV instead
 envpact exec --env=production -- bin/rails server   # boot check, then exec
 envpact scan-prompt | claude          # have an agent write env.spec for this repo
+
+# secrets in OpenBao (0.2, see "Secrets with OpenBao")
+envpact login --read                  # log in once a month, token stored encrypted
+envpact unlock --for=2h               # keep the read token in a local agent
+envpact pull --env=development        # secrets -> .env.development.local (0600)
+envpact run --env=development -- bin/rails s   # secrets only in the process
+envpact push --env=production --from=.env.new  # write secrets (asks you, on the tty)
+envpact set --env=production STRIPE_KEY        # write one secret
+envpact status | envpact lock
 ```
 
 - The contract path defaults to `./env.spec`; override with `--spec=PATH` or
@@ -51,6 +63,54 @@ Composes with Infisical (or anything that injects env) without coupling:
 
 ```sh
 infisical run --env=dev -- envpact exec --env=development -- bin/rails s
+```
+
+## Secrets with OpenBao
+
+The `[source]` section of `env.spec` says where each env's secrets live (KV v2):
+
+```
+[source]
+openbao path=team/myapp/{env}
+openbao path=cluster/selly/myapp-web env=production
+```
+
+The server address is `addr=` on the line, else `$BAO_ADDR`. A token is only ever
+sent to the address it was issued for; a spec naming another address is refused.
+The source holds only the keys declared under `[secrets]`; ConfigMap values keep
+coming from `.env*`, `app.yml` and defaults.
+
+| Command | What it does |
+|---|---|
+| `login --read` / `login --write --role=NAME` | OIDC login through a loopback listener (`--port=8250`, `--oidc-mount=oidc`), or `--token-stdin` for a token you already have. Asks for a passphrase (min 12 chars) on the terminal and stores the token AES-256-GCM encrypted (PBKDF2-SHA256, 600 000 iterations) in `~/.ob_read` or `~/.ob_write`. A file readable by others is refused, like ssh does. |
+| `unlock [--for=2h]` | Hands the read token to a local agent (Unix socket, 0600, your uid only) for up to 8h and never past the token's expiry. While unlocked, `pull`/`run` ask for nothing. Writes never use the agent. |
+| `lock`, `status` | Stop the agent; show agent and token-file state (never the tokens). |
+| `pull --env=E [--out=PATH]` | Reads the env's secrets, checks them together with the `.env*` files (not the target itself) and, only if the contract is satisfied, writes `.env.<E>.local` (0600). Warns if the file is not git-ignored. |
+| `run --env=E -- CMD` | Like `exec`, but the secrets come from OpenBao and go only into CMD's environment. They override the current ENV; the OpenBao token never reaches CMD. |
+| `push --env=E --from=FILE\|-` | Validates the secret keys in a dotenv file and merges them into the env's path (never deletes a key). |
+| `set --env=E KEY` | Same for one key; the value comes from stdin, or a no-echo prompt on a terminal. |
+| `check --env=E --source` | `check` with the OpenBao secrets overlaid in memory. Not combinable with `--show-values`. |
+
+Writes (`push`/`set`) need a human: they show what will be written, ask `y/N` on
+`/dev/tty`, then the passphrase of `~/.ob_write`. With no terminal they refuse
+before any network call. No env var or flag can supply the passphrase or the
+confirmation. Each use of the read token also renews it (`renew-self`).
+
+What changed from 0.1: envpact used to read nothing but your own files and write
+nothing. Now it talks to OpenBao and writes `~/.ob_read`, `~/.ob_write` and the
+`pull` target (always 0600, through a temp file and rename, never through a
+symlink).
+
+With Claude Code, let it read and run, but make writes and logins ask you, and
+keep it away from the token files (`.claude/settings.json`):
+
+```json
+{
+  "permissions": {
+    "ask":  ["Bash(envpact push:*)", "Bash(envpact set:*)", "Bash(envpact login:*)"],
+    "deny": ["Read(~/.ob_read)", "Read(~/.ob_write)", "Bash(cat ~/.ob_*)"]
+  }
+}
 ```
 
 ## env.spec syntax
@@ -118,6 +178,8 @@ spec = EnvPact.parse_file("env.spec")      # or EnvPact.parse(text)
 spec.envs                                  # env names that have sections
 spec.configmap_for("production")           # shared + production, {key => Entry}
 spec.secrets_for("production")
+spec.source_for("production")              # EnvPact::SourceRef (mount, path, addr) or nil
+EnvPact::Source.fetch(spec, env: "production", client: client)  # {secret key => value} from OpenBao
 
 result = spec.check(values, env: "production", strict: false)
 result.ok?               # no errors (warnings allowed)

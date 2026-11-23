@@ -44,6 +44,18 @@ class TestCliLogin < Minitest::Test
     assert_equal "t0k-secret-value", @bao.requests_for("GET", "/v1/auth/token/lookup-self").first.headers["x-vault-token"]
   end
 
+  def test_cli_login_records_server_role_when_no_role_given
+    @bao.on("GET", "/v1/auth/token/lookup-self", body: { "data" => {
+      "ttl" => 3600, "expire_time" => "2026-11-23T03:00:00Z", "display_name" => "oidc-tom", "policies" => ["default"],
+      "meta" => { "role" => "leitura" }
+    } })
+    out, code = envpact("login --read --token-stdin", stdin: "t0k-secret-value",
+                        answers: [[/passphrase.*: \z/i, PASS], [/again|repeat|confirm/i, PASS]])
+    assert_equal 0, code, out
+    assert_match(/logged in \(read, role leitura,/, out)
+    assert_equal "leitura", EnvPact::Keyfile.meta(:read)[:role]
+  end
+
   def test_cli_login_write_with_role_and_token_stdin
     out, code = envpact("login --write --role=escrita --token-stdin", stdin: "w-tok",
                         answers: [[/passphrase.*: \z/i, PASS], [/again|repeat|confirm/i, PASS]])

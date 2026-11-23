@@ -123,7 +123,14 @@ class TestOpenBao < Minitest::Test
       "ttl" => 100, "expire_time" => "2026-11-23T03:00:00Z", "display_name" => "oidc-tom", "policies" => %w[default x], "id" => TOKEN
     } })
     info = client.lookup_self
-    assert_equal({ "ttl" => 100, "expire_time" => "2026-11-23T03:00:00Z", "display_name" => "oidc-tom", "policies" => %w[default x] }, info)
+    assert_equal({ "ttl" => 100, "expire_time" => "2026-11-23T03:00:00Z", "display_name" => "oidc-tom", "policies" => %w[default x], "role" => nil }, info)
+  end
+
+  def test_lookup_self_reports_oidc_role_from_meta
+    @bao.on("GET", "/v1/auth/token/lookup-self", body: { "data" => {
+      "ttl" => 100, "expire_time" => nil, "display_name" => "oidc-tom", "policies" => %w[default], "meta" => { "role" => "leitura" }
+    } })
+    assert_equal "leitura", client.lookup_self["role"]
   end
 
   def test_renew_self_posts

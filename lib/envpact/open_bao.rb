@@ -70,7 +70,9 @@ class EnvPact
           "ttl"          => d["ttl"].to_i,
           "expire_time"  => d["expire_time"],
           "display_name" => d["display_name"].to_s,
-          "policies"     => Array(d["policies"])
+          "policies"     => Array(d["policies"]),
+          # The auth role the token came from (OIDC/JWT put it in meta.role).
+          "role"         => (d["meta"]["role"] if d["meta"].is_a?(Hash))
         }
       end
 

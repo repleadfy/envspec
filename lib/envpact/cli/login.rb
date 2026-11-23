@@ -52,7 +52,7 @@ class EnvPact
         info = authed.lookup_self
 
         passphrase = ask_new_passphrase
-        role = opts[:role] || "default"
+        role = opts[:role] || info["role"] || "default"
         Keyfile.write(kind, token: token, addr: addr, role: role, expire_time: info["expire_time"], passphrase: passphrase)
         puts "✓ logged in (#{kind}, role #{role}, #{expiry_text(info['expire_time'])}) → ~/#{File.basename(Keyfile.path(kind))}"
         0
